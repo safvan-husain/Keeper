@@ -1,0 +1,4 @@
+create a tree for letter, auto suggestion, anylyze my journey by picking a word
+
+
+I will complete the functionality by 10th, will spend rest improving
