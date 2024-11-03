@@ -1,71 +1,62 @@
 import 'package:keeper/features/write/domain/entity/predicted_word.dart';
 import 'package:objectbox/objectbox.dart';
 import '../../../objectbox.g.dart';
-
-@Entity()
-class Node {
-  @Id()
-  int id;
-  String char;
-  bool isEnd;
-  ToMany<Node> children = ToMany<Node>();
-
-  Node({
-    this.id = 0,
-    this.isEnd = false,
-    required this.char,
-  });
-
-  @override
-  String toString() {
-    return "$char -> ${children.isNotEmpty ? children.map((e) => e.toString).toList() : "no child"}";
-  }
-}
+import '../domain/entity/chacter_node.dart';
+import '../domain/entity/journal.dart';
 
 class WriteStorage {
-  String rootChar = "root";
-  late Node rootNode;
+  final String _rootChar = "root";
+  late Node _rootNode;
   Store? _store;
-  late final Box<Node> box;
+  late final Box<Node> _characterBox;
+  late final Box<Journal> _journalBox;
 
   //using in on null case for firstWhere method.
   final Node none = Node(char: "none");
 
   Future<void> init() async {
-    print("initilazing storage");
     _store ??= await openStore();
-    box = _store!.box<Node>();
-    final query = box // Query
-        .query(Node_.char.equals(rootChar))
+    _characterBox = _store!.box<Node>();
+    _journalBox = _store!.box<Journal>();
+
+    _initRootNode();
+    List<String> words = ["safvan", "good", "nice", "when", "really"];
+
+    for (var w in words) {
+      saveWord(w);
+    }
+  }
+
+  void _initRootNode() {
+    final query = _characterBox // Query
+        .query(Node_.char.equals(_rootChar))
         .build();
     final List<Node> nodes = query.find();
     query.close();
     if (nodes.isEmpty) {
-      rootNode = Node(char: rootChar);
-      final int id = box.put(rootNode);
-      rootNode = rootNode..id = id;
+      _rootNode = Node(char: _rootChar);
+      final int id = _characterBox.put(_rootNode);
+      _rootNode = _rootNode..id = id;
     } else {
-      rootNode = nodes.first;
+      _rootNode = nodes.first;
     }
   }
 
   int saveWord(String word) {
-    Node prevNode = rootNode;
+    Node prevNode = _rootNode;
 
-    List<Node> charecters = [];
+    List<Node> characters = [];
 
     bool foundEnd = false;
     int index = 0;
-    charecters.add(rootNode);
+    characters.add(_rootNode);
     // Node previousNode = prevNode;
 
     while (!foundEnd) {
       bool last = index == word.length - 1;
-      print("looking for node ${word.substring(index, index + 1)}");
       Node tempNode = prevNode.children.firstWhere(
           (node) => node.char == word.substring(index, index + 1),
           orElse: () => none);
-      print("not found end yet ${tempNode.char}");
       if (tempNode.char == none.char) {
         foundEnd = true;
         break;
@@ -73,54 +64,53 @@ class WriteStorage {
         index++;
         if (last) {
           tempNode = tempNode..isEnd = true;
-          charecters.add(tempNode);
+          characters.add(tempNode);
           prevNode = tempNode;
           break;
         }
-        charecters.add(tempNode);
+        characters.add(tempNode);
         prevNode = tempNode;
       }
     }
 
-    print("before adding new ${prevNode.toString()}");
-
     for (int i = index; i < word.length; i++) {
-      print("for adding new char for ${word[i]}");
       Node node = Node(char: word[i], isEnd: i == word.length - 1);
-      int id = box.put(node);
+      //assigning parent character relation.
+      node.parent.target = characters.lastOrNull;
+      int id = _characterBox.put(node);
       node = node..id = id;
-      charecters.add(node);
+      characters.add(node);
     }
 
-    Node nextNode = charecters.last;
-    for (int i = charecters.length - 2; i >= index; i--) {
-      charecters[i].children.add(nextNode);
-      nextNode = charecters[i];
-      box.put(nextNode);
+    Node nextNode = characters.last;
+    for (int i = characters.length - 2; i >= index; i--) {
+      characters[i].children.add(nextNode);
+      nextNode = characters[i];
+      _characterBox.put(nextNode);
     }
 
-    return charecters.last.id;
+    return characters.last.id;
   }
 
   void seeAll() async {
-    var query = box.query().build();
+    var query = _characterBox.query().build();
 
     var result = await query.findAsync();
 
     print(result
-        .map((e) => "${e.char} childs: ${e.children.map((k) => "${k.char}")}")
+        .map((e) => "${e.char} child: ${e.children.map((k) => k.char)}")
         .toList());
   }
 
   void deleteALl() async {
-    await box.removeAllAsync();
+    await _characterBox.removeAllAsync();
     seeAll();
   }
 
-  List<PredictedWord> predictWord(String prompt) {
-    print("predicting for $prompt");
-    List<PredictedWord> possibleWords = [];
-    Node prevNode = rootNode;
+  List<String> predictWord(String prompt) {
+    if (prompt.length < 2) return [];
+    List<String> possibleWords = [];
+    Node prevNode = _rootNode;
 
     bool reachLast = false;
 
@@ -132,7 +122,6 @@ class WriteStorage {
       Node tempNode = prevNode.children.firstWhere(
           (node) => node.char == prompt.substring(index, index + 1),
           orElse: () => none);
-      print("temp: ${tempNode.toString()}");
       if (tempNode.char == none.char) {
         if (!reachLast) return [];
         break;
@@ -142,23 +131,18 @@ class WriteStorage {
       }
     }
 
-    print("First node : ${prevNode.char}");
     List<String> result = [];
-    collect(prevNode, "", result);
-    result.forEach((e) => print("$prompt${e.substring(1)}"));
+    _collectPossibleWords(prevNode, "", result);
 
-    return possibleWords;
+    return result.map((e) => e.substring(1)).toList();
   }
 
-  void collect(Node node, String text, List<String> results) {
+  void _collectPossibleWords(Node node, String text, List<String> results) {
     if (node.isEnd) {
       results.add(text + node.char);
-      print(
-          "adding ${text + node.char} and left child are ${node.children.map((e) => e.char)}");
-      //git a string
     }
     for (var child in node.children) {
-      collect(child, text + node.char, results);
+      _collectPossibleWords(child, text + node.char, results);
     }
   }
 }

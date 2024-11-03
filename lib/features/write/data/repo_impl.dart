@@ -8,12 +8,13 @@ import 'package:keeper/features/write/domain/entity/predicted_word.dart';
 import '../domain/repository.dart';
 
 class WriteRepositoryImpl implements WriteRepository {
-  final storage = WriteStorage();
+  final WriteStorage storage;
+
+  WriteRepositoryImpl(this.storage);
 
   @override
-  Future<Either<AppError, PredictedWord>> predictWord(String prompt) {
-    // TODO: implement predictWord
-    throw UnimplementedError();
+  Future<Either<AppError, List<String>>> predictWord(String prompt) async {
+    return Right<AppError, List<String>>(storage.predictWord(prompt) ?? []);
   }
 
   @override

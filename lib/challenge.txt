@@ -1,0 +1,17 @@
+need to support backspace,
+can't use direct tect from controller ->
+can => just need to add word when accepting suggestion, we can store data last.
+
+//tomorrow task:
+
+should able to accept suggestions, should have a clean UI for writing, should able to save, and read again.
+
+
+accept word:
+store suggestion to a list in state, when add, or remove space clear that,
+other times curate from the list
+
+onBackSpace: when remove a space need to clear predictionCache, otherwise update prediction
+
+onAddingtion: if pressed enter need to know whther it for accepting or next line, if added space need to clear predictionCache,
+click enter twise to  accept suggeestion, otherwise next line, on the first tap, it add next line, but then click again

@@ -6,7 +6,7 @@ class WriteState {
   final InstanceType type;
   final String content;
   final String input;
-  final List<PredictedWord> predictions;
+  final List<String> predictions;
 
   WriteState({
     required this.type,
@@ -27,7 +27,7 @@ class WriteState {
   WriteState copyWith(
       {InstanceType? type,
       String? input,
-      List<PredictedWord>? predictions,
+      List<String>? predictions,
       String? content}) {
     return WriteState(
       type: type ?? this.type,

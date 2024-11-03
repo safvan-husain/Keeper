@@ -5,6 +5,7 @@ import 'package:keeper/features/write/presentation/screens/new_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sizer/sizer.dart';
 
+import 'core/theme.dart';
 import 'features/write/data/write_storage.dart';
 import 'features/write/presentation/cubit/write_cubit.dart';
 
@@ -15,34 +16,33 @@ void main() async {
   runApp(
     MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => WriteCubit(WriteRepositoryImpl())),
+        BlocProvider(
+          create: (_) => WriteCubit(
+            WriteRepositoryImpl(storage),
+          ),
+        ),
       ],
-      child: MyApp(
-        storage: storage,
-      ),
+      child: const MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  final WriteStorage storage;
-
-  const MyApp({super.key, required this.storage});
+  const MyApp({
+    super.key,
+  });
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return Sizer(builder: (context, orientation, screenType) {
-      return GetMaterialApp(
-        title: 'Flutter Demo',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
-        home: NewPage(
-          storage: storage,
-        ),
-      );
-    });
+    return Sizer(
+      builder: (context, orientation, screenType) {
+        return GetMaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          home: const NewPage(),
+        );
+      },
+    );
   }
 }
