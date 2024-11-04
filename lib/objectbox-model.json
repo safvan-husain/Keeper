@@ -5,7 +5,7 @@
   "entities": [
     {
       "id": "1:3152252213695055902",
-      "lastPropertyId": "3:7442561203662742045",
+      "lastPropertyId": "5:6769015259870068923",
       "name": "Node",
       "properties": [
         {
@@ -23,6 +23,19 @@
           "id": "3:7442561203662742045",
           "name": "isEnd",
           "type": 1
+        },
+        {
+          "id": "4:5931542472866017420",
+          "name": "parentId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "1:1249980064427292537",
+          "relationTarget": "Node"
+        },
+        {
+          "id": "5:6769015259870068923",
+          "name": "usedPages",
+          "type": 27
         }
       ],
       "relations": [
@@ -32,10 +45,39 @@
           "targetId": "1:3152252213695055902"
         }
       ]
+    },
+    {
+      "id": "2:4906160380309597809",
+      "lastPropertyId": "4:7024151124931027117",
+      "name": "Journal",
+      "properties": [
+        {
+          "id": "1:1178338533994597232",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5325205126782430747",
+          "name": "title",
+          "type": 9
+        },
+        {
+          "id": "3:3637565735593100518",
+          "name": "dateTime",
+          "type": 10
+        },
+        {
+          "id": "4:7024151124931027117",
+          "name": "content",
+          "type": 27
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "1:3152252213695055902",
-  "lastIndexId": "0:0",
+  "lastEntityId": "2:4906160380309597809",
+  "lastIndexId": "1:1249980064427292537",
   "lastRelationId": "1:1847150215572690996",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

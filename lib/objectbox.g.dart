@@ -14,7 +14,8 @@ import 'package:objectbox/internal.dart'
 import 'package:objectbox/objectbox.dart' as obx;
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
-import 'features/write/data/write_storage.dart';
+import 'features/write/domain/entity/chacter_node.dart';
+import 'features/write/domain/entity/journal.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
 
@@ -22,7 +23,7 @@ final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
       id: const obx_int.IdUid(1, 3152252213695055902),
       name: 'Node',
-      lastPropertyId: const obx_int.IdUid(3, 7442561203662742045),
+      lastPropertyId: const obx_int.IdUid(5, 6769015259870068923),
       flags: 0,
       properties: <obx_int.ModelProperty>[
         obx_int.ModelProperty(
@@ -39,6 +40,18 @@ final _entities = <obx_int.ModelEntity>[
             id: const obx_int.IdUid(3, 7442561203662742045),
             name: 'isEnd',
             type: 1,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(4, 5931542472866017420),
+            name: 'parentId',
+            type: 11,
+            flags: 520,
+            indexId: const obx_int.IdUid(1, 1249980064427292537),
+            relationTarget: 'Node'),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(5, 6769015259870068923),
+            name: 'usedPages',
+            type: 27,
             flags: 0)
       ],
       relations: <obx_int.ModelRelation>[
@@ -47,6 +60,35 @@ final _entities = <obx_int.ModelEntity>[
             name: 'children',
             targetId: const obx_int.IdUid(1, 3152252213695055902))
       ],
+      backlinks: <obx_int.ModelBacklink>[]),
+  obx_int.ModelEntity(
+      id: const obx_int.IdUid(2, 4906160380309597809),
+      name: 'Journal',
+      lastPropertyId: const obx_int.IdUid(4, 7024151124931027117),
+      flags: 0,
+      properties: <obx_int.ModelProperty>[
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(1, 1178338533994597232),
+            name: 'id',
+            type: 6,
+            flags: 1),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(2, 5325205126782430747),
+            name: 'title',
+            type: 9,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(3, 3637565735593100518),
+            name: 'dateTime',
+            type: 10,
+            flags: 0),
+        obx_int.ModelProperty(
+            id: const obx_int.IdUid(4, 7024151124931027117),
+            name: 'content',
+            type: 27,
+            flags: 0)
+      ],
+      relations: <obx_int.ModelRelation>[],
       backlinks: <obx_int.ModelBacklink>[])
 ];
 
@@ -85,8 +127,8 @@ Future<obx.Store> openStore(
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
       entities: _entities,
-      lastEntityId: const obx_int.IdUid(1, 3152252213695055902),
-      lastIndexId: const obx_int.IdUid(0, 0),
+      lastEntityId: const obx_int.IdUid(2, 4906160380309597809),
+      lastIndexId: const obx_int.IdUid(1, 1249980064427292537),
       lastRelationId: const obx_int.IdUid(1, 1847150215572690996),
       lastSequenceId: const obx_int.IdUid(0, 0),
       retiredEntityUids: const [],
@@ -100,7 +142,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
   final bindings = <Type, obx_int.EntityDefinition>{
     Node: obx_int.EntityDefinition<Node>(
         model: _entities[0],
-        toOneRelations: (Node object) => [],
+        toOneRelations: (Node object) => [object.parent],
         toManyRelations: (Node object) =>
             {obx_int.RelInfo<Node>.toMany(1, object.id): object.children},
         getId: (Node object) => object.id,
@@ -109,10 +151,13 @@ obx_int.ModelDefinition getObjectBoxModel() {
         },
         objectToFB: (Node object, fb.Builder fbb) {
           final charOffset = fbb.writeString(object.char);
-          fbb.startTable(4);
+          final usedPagesOffset = fbb.writeListInt64(object.usedPages);
+          fbb.startTable(6);
           fbb.addInt64(0, object.id);
           fbb.addOffset(1, charOffset);
           fbb.addBool(2, object.isEnd);
+          fbb.addInt64(3, object.parent.targetId);
+          fbb.addOffset(4, usedPagesOffset);
           fbb.finish(fbb.endTable());
           return object.id;
         },
@@ -125,9 +170,58 @@ obx_int.ModelDefinition getObjectBoxModel() {
               const fb.BoolReader().vTableGet(buffer, rootOffset, 8, false);
           final charParam = const fb.StringReader(asciiOptimization: true)
               .vTableGet(buffer, rootOffset, 6, '');
-          final object = Node(id: idParam, isEnd: isEndParam, char: charParam);
+          final usedPagesParam =
+              const fb.ListReader<int>(fb.Int64Reader(), lazy: false)
+                  .vTableGet(buffer, rootOffset, 12, []);
+          final object = Node(
+              id: idParam,
+              isEnd: isEndParam,
+              char: charParam,
+              usedPages: usedPagesParam);
+          object.parent.targetId =
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 10, 0);
+          object.parent.attach(store);
           obx_int.InternalToManyAccess.setRelInfo<Node>(object.children, store,
               obx_int.RelInfo<Node>.toMany(1, object.id));
+          return object;
+        }),
+    Journal: obx_int.EntityDefinition<Journal>(
+        model: _entities[1],
+        toOneRelations: (Journal object) => [],
+        toManyRelations: (Journal object) => {},
+        getId: (Journal object) => object.id,
+        setId: (Journal object, int id) {
+          object.id = id;
+        },
+        objectToFB: (Journal object, fb.Builder fbb) {
+          final titleOffset = fbb.writeString(object.title);
+          final contentOffset = fbb.writeListInt64(object.content);
+          fbb.startTable(5);
+          fbb.addInt64(0, object.id);
+          fbb.addOffset(1, titleOffset);
+          fbb.addInt64(2, object.dateTime.millisecondsSinceEpoch);
+          fbb.addOffset(3, contentOffset);
+          fbb.finish(fbb.endTable());
+          return object.id;
+        },
+        objectFromFB: (obx.Store store, ByteData fbData) {
+          final buffer = fb.BufferContext(fbData);
+          final rootOffset = buffer.derefObject(0);
+          final idParam =
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
+          final titleParam = const fb.StringReader(asciiOptimization: true)
+              .vTableGet(buffer, rootOffset, 6, '');
+          final dateTimeParam = DateTime.fromMillisecondsSinceEpoch(
+              const fb.Int64Reader().vTableGet(buffer, rootOffset, 8, 0));
+          final contentParam =
+              const fb.ListReader<int>(fb.Int64Reader(), lazy: false)
+                  .vTableGet(buffer, rootOffset, 10, []);
+          final object = Journal(
+              id: idParam,
+              title: titleParam,
+              dateTime: dateTimeParam,
+              content: contentParam);
+
           return object;
         })
   };
@@ -147,7 +241,34 @@ class Node_ {
   static final isEnd =
       obx.QueryBooleanProperty<Node>(_entities[0].properties[2]);
 
+  /// See [Node.parent].
+  static final parent =
+      obx.QueryRelationToOne<Node, Node>(_entities[0].properties[3]);
+
+  /// See [Node.usedPages].
+  static final usedPages =
+      obx.QueryIntegerVectorProperty<Node>(_entities[0].properties[4]);
+
   /// see [Node.children]
   static final children =
       obx.QueryRelationToMany<Node, Node>(_entities[0].relations[0]);
+}
+
+/// [Journal] entity fields to define ObjectBox queries.
+class Journal_ {
+  /// See [Journal.id].
+  static final id =
+      obx.QueryIntegerProperty<Journal>(_entities[1].properties[0]);
+
+  /// See [Journal.title].
+  static final title =
+      obx.QueryStringProperty<Journal>(_entities[1].properties[1]);
+
+  /// See [Journal.dateTime].
+  static final dateTime =
+      obx.QueryDateProperty<Journal>(_entities[1].properties[2]);
+
+  /// See [Journal.content].
+  static final content =
+      obx.QueryIntegerVectorProperty<Journal>(_entities[1].properties[3]);
 }

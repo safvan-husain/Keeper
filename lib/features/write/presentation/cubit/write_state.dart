@@ -5,35 +5,32 @@ enum InstanceType { error, sucess }
 class WriteState {
   final InstanceType type;
   final String content;
-  final String input;
   final List<String> predictions;
+  final String? title;
 
-  WriteState({
-    required this.type,
-    required this.content,
-    required this.input,
-    required this.predictions,
-  });
+  WriteState(
+      {required this.type,
+      required this.content,
+      required this.predictions,
+      this.title});
 
   factory WriteState.initial() {
     return WriteState(
       type: InstanceType.sucess,
       content: "",
-      input: "",
       predictions: [],
     );
   }
 
   WriteState copyWith(
       {InstanceType? type,
-      String? input,
       List<String>? predictions,
+      String? title,
       String? content}) {
     return WriteState(
-      type: type ?? this.type,
-      input: input ?? this.input,
-      content: content ?? this.content,
-      predictions: predictions ?? this.predictions,
-    );
+        type: type ?? this.type,
+        content: content ?? this.content,
+        predictions: predictions ?? this.predictions,
+        title: title ?? this.title);
   }
 }

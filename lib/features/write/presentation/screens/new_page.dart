@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:keeper/features/write/data/write_storage.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:sizer/sizer.dart';
 
+import '../../domain/entity/journal.dart';
 import '../cubit/write_cubit.dart';
 
 class NewPage extends StatefulWidget {
+  final Journal journal;
+
   const NewPage({
     super.key,
+    required this.journal,
   });
 
   @override
@@ -18,20 +20,11 @@ class NewPage extends StatefulWidget {
 }
 
 class _NewPageState extends State<NewPage> {
-  bool isKeyboardOn = false;
-
-  void toggleKeyboard() {
-    if (isKeyboardOn) {
-      SystemChannels.textInput.invokeMethod("TextInput.hide");
-    } else {
-      SystemChannels.textInput.invokeMethod("TextInput.show");
-    }
-    isKeyboardOn = !isKeyboardOn;
-  }
-
   final FocusNode _focusNode = FocusNode();
   TextEditingController inputController = TextEditingController();
   int prevLength = 0;
+
+  late Future<String> futureContent;
 
   @override
   void initState() {
@@ -55,6 +48,12 @@ class _NewPageState extends State<NewPage> {
       }
       prevLength = contentLength;
     });
+    cubit.init(
+      textUpdater: (content) {
+        inputController.text = content;
+      },
+      journal: widget.journal,
+    );
     super.initState();
   }
 
@@ -76,7 +75,6 @@ class _NewPageState extends State<NewPage> {
             ),
             BlocBuilder<WriteCubit, WriteState>(
               builder: (context, state) {
-                print("state updated");
                 return GestureDetector(
                   onTap: () {
                     FocusScope.of(context).requestFocus(_focusNode);
@@ -108,34 +106,54 @@ class _NewPageState extends State<NewPage> {
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.arrow_forward),
         onPressed: () async {
-          context.read<WriteCubit>().acceptSuggestion((content) {
-            inputController.text = content;
-          });
+          context.read<WriteCubit>().acceptSuggestion();
         },
       ),
     );
   }
 
   AppBar buildAppBar() {
+    var cubit = context.read<WriteCubit>();
     return AppBar(
-        actions: [
-      GestureDetector(
-        onTap: () {},
-        child: Icon(Icons.add),
+      title: GestureDetector(
+        onTap: () => cubit.showOverlay(),
+        child: Text(
+          context.watch<WriteCubit>().state.title ?? widget.journal.title,
+          style: Get.theme.textTheme.titleMedium,
+        ),
       ),
-      GestureDetector(
-        onTap: () {},
-        child: Icon(Icons.delete),
+      leading: GestureDetector(
+        onTap: () => cubit.showAllJournals(),
+        child: const Icon(Icons.arrow_back),
       ),
-      GestureDetector(
-        onTap: () {},
-        child: Icon(Icons.save),
-      ),
-    ]
-            .map((e) => Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: e,
-                ))
-            .toList());
+      actions: [
+        GestureDetector(
+          onTap: () {
+            cubit.showAllJournals();
+          },
+          child: const Icon(Icons.list),
+        ),
+        GestureDetector(
+          onTap: () {},
+          child: const Icon(Icons.delete),
+        ),
+        GestureDetector(
+          onTap: () {
+            context.read<WriteCubit>().savePage(
+                  inputController.text,
+                  widget.journal,
+                );
+          },
+          child: const Icon(Icons.save),
+        ),
+      ]
+          .map(
+            (e) => Padding(
+              padding: const EdgeInsets.all(10),
+              child: e,
+            ),
+          )
+          .toList(),
+    );
   }
 }

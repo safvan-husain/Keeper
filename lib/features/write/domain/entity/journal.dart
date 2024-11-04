@@ -4,19 +4,17 @@ import 'package:objectbox/objectbox.dart';
 class Journal {
   @Id()
   int id;
-  String? title;
+  late String title;
   @Property(type: PropertyType.date)
   DateTime dateTime;
   List<int> content;
 
   Journal({
     this.id = 0,
-    this.title,
+    String? title,
     required this.dateTime,
     this.content = const [],
-  });
-
-  void addToken(int i) {
-    content.add(i);
+  }) {
+    this.title = title ?? dateTime.toString().split(".").first;
   }
 }

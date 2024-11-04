@@ -6,16 +6,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sizer/sizer.dart';
 
 import 'core/theme.dart';
+import 'features/view_entries/presentation/list_cubit.dart';
 import 'features/write/data/write_storage.dart';
+import 'features/write/domain/entity/journal.dart';
 import 'features/write/presentation/cubit/write_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   var storage = WriteStorage();
   await storage.init();
+  storage.seeAll();
   runApp(
     MultiBlocProvider(
       providers: [
+        BlocProvider(
+          create: (_) => ListCubit(
+            WriteRepositoryImpl(storage),
+          ),
+        ),
         BlocProvider(
           create: (_) => WriteCubit(
             WriteRepositoryImpl(storage),
@@ -40,7 +48,9 @@ class MyApp extends StatelessWidget {
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
-          home: const NewPage(),
+          home: NewPage(
+            journal: Journal(dateTime: DateTime.now()),
+          ),
         );
       },
     );
