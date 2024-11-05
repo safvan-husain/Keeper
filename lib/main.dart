@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:keeper/features/insights/data/insight_storage.dart';
+import 'package:keeper/features/insights/data/repo_impl.dart';
 import 'package:keeper/features/write/data/repo_impl.dart';
 import 'package:keeper/features/write/presentation/screens/new_page.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sizer/sizer.dart';
 
+import 'core/app_storage.dart';
 import 'core/theme.dart';
+import 'features/insights/presentaion/cubit/insight_cubit.dart';
 import 'features/view_entries/presentation/list_cubit.dart';
 import 'features/write/data/write_storage.dart';
 import 'features/write/domain/entity/journal.dart';
@@ -13,20 +17,28 @@ import 'features/write/presentation/cubit/write_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  var storage = WriteStorage();
+  var storage = AppStorage();
   await storage.init();
-  storage.seeAll();
   runApp(
     MultiBlocProvider(
       providers: [
         BlocProvider(
+          create: (_) => InsightCubit(
+            InsightRepositoryImpl(
+              storage: InsightStorage(
+                storage: storage,
+              ),
+            ),
+          ),
+        ),
+        BlocProvider(
           create: (_) => ListCubit(
-            WriteRepositoryImpl(storage),
+            WriteRepositoryImpl(WriteStorage(storage: storage)),
           ),
         ),
         BlocProvider(
           create: (_) => WriteCubit(
-            WriteRepositoryImpl(storage),
+            WriteRepositoryImpl(WriteStorage(storage: storage)),
           ),
         ),
       ],

@@ -60,54 +60,61 @@ class _NewPageState extends State<NewPage> {
   // late Future<void> init = storage.init();
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: buildAppBar(),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Container(
-              color: Colors.red,
-              child: TextField(
-                focusNode: _focusNode,
-                controller: inputController,
-                keyboardType: TextInputType.visiblePassword,
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          context.read<WriteCubit>().clearContent();
+        }
+      },
+      child: Scaffold(
+        appBar: buildAppBar(),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Container(
+                color: Colors.red,
+                child: TextField(
+                  focusNode: _focusNode,
+                  controller: inputController,
+                  keyboardType: TextInputType.visiblePassword,
+                ),
               ),
-            ),
-            BlocBuilder<WriteCubit, WriteState>(
-              builder: (context, state) {
-                return GestureDetector(
-                  onTap: () {
-                    FocusScope.of(context).requestFocus(_focusNode);
-                  },
-                  child: Container(
-                    color: Colors.white,
-                    width: 100.w,
-                    height: 100.h,
-                    padding: const EdgeInsets.all(20),
-                    child: Stack(
-                      children: [
-                        Text(
-                          state.content,
-                          style: GoogleFonts.poppins(color: Colors.grey),
-                        ),
-                        Text(
-                          inputController.text,
-                          style: GoogleFonts.poppins(),
-                        ),
-                      ],
+              BlocBuilder<WriteCubit, WriteState>(
+                builder: (context, state) {
+                  return GestureDetector(
+                    onTap: () {
+                      FocusScope.of(context).requestFocus(_focusNode);
+                    },
+                    child: Container(
+                      color: Colors.white,
+                      width: 100.w,
+                      height: 100.h,
+                      padding: const EdgeInsets.all(20),
+                      child: Stack(
+                        children: [
+                          Text(
+                            state.content,
+                            style: GoogleFonts.poppins(color: Colors.grey),
+                          ),
+                          Text(
+                            inputController.text,
+                            style: GoogleFonts.poppins(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-          ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.arrow_forward),
-        onPressed: () async {
-          context.read<WriteCubit>().acceptSuggestion();
-        },
+        floatingActionButton: FloatingActionButton(
+          child: const Icon(Icons.arrow_forward),
+          onPressed: () async {
+            context.read<WriteCubit>().acceptSuggestion();
+          },
+        ),
       ),
     );
   }
@@ -117,14 +124,13 @@ class _NewPageState extends State<NewPage> {
     return AppBar(
       title: GestureDetector(
         onTap: () => cubit.showOverlay(),
-        child: Text(
-          context.watch<WriteCubit>().state.title ?? widget.journal.title,
-          style: Get.theme.textTheme.titleMedium,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 10),
+          child: Text(
+            context.watch<WriteCubit>().state.title ?? widget.journal.title,
+            style: Get.theme.textTheme.titleMedium,
+          ),
         ),
-      ),
-      leading: GestureDetector(
-        onTap: () => cubit.showAllJournals(),
-        child: const Icon(Icons.arrow_back),
       ),
       actions: [
         GestureDetector(

@@ -49,6 +49,10 @@ class WriteCubit extends Cubit<WriteState> {
     emit(state.copyWith(predictions: []));
   }
 
+  void clearContent() {
+    emit(state.copyWith(content: ""));
+  }
+
   void updateSuggestion(String input) async {
     String? lastChar = input.split(" ").lastOrNull;
     if (lastChar == null) return;

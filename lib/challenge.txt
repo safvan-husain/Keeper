@@ -1,2 +1,1 @@
-1 need to show list of journals
-2 need to open the page with a journal instance, if new with id 0 -> so can update if changed.
+1. loading indicator.
